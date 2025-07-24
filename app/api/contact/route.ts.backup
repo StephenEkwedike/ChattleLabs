@@ -1,0 +1,54 @@
+import { type NextRequest, NextResponse } from "next/server"
+
+// Airtable configuration
+const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID
+const AIRTABLE_TABLE_NAME = process.env.AIRTABLE_TABLE_NAME || "Leads"
+const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { name, email, phone, business, industry, message } = body
+
+    // Validate required fields
+    if (!name || !email || !phone || !business || !industry) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    }
+
+    // Submit to Airtable
+    const airtableResponse = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAME}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${AIRTABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        fields: {
+          Name: name,
+          Email: email,
+          Phone: phone,
+          Business: business,
+          Industry: industry,
+          Message: message || "",
+          Source: "Website Contact Form",
+          Created: new Date().toISOString(),
+          Status: "New Lead",
+        },
+      }),
+    })
+
+    if (!airtableResponse.ok) {
+      throw new Error("Failed to submit to Airtable")
+    }
+
+    const airtableData = await airtableResponse.json()
+
+    return NextResponse.json({
+      success: true,
+      recordId: airtableData.id,
+    })
+  } catch (error) {
+    console.error("Contact form submission error:", error)
+    return NextResponse.json({ error: "Failed to submit form" }, { status: 500 })
+  }
+}
