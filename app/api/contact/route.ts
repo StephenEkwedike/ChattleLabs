@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 
-// Airtable configuration
+// Airtable configuration (fallback if not configured)
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID
 const AIRTABLE_TABLE_ID = process.env.AIRTABLE_TABLE_ID || "Leads"
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY
@@ -14,56 +14,75 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!name || !email || !phone || !business || !industry || !leadSource) {
+      console.error('Missing required fields:', { name, email, phone, business, industry, leadSource })
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    // Submit to Airtable
-    console.log('Environment variables:', {
-      AIRTABLE_BASE_ID,
-      AIRTABLE_TABLE_ID,
-      AIRTABLE_API_KEY: AIRTABLE_API_KEY ? 'Present' : 'Missing'
-    })
-    const airtableResponse = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ID}`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${AIRTABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        fields: {
-          Name: name,
-          Email: email,
-          Phone: phone,
-          Business: business,
-          Industry: industry,
-          "Lead Source": leadSource,
-          Message: message || "",
-          Source: leadSource,
-          Status: "New Lead",
-        },
-      }),
-    })
+    // Try Airtable first if configured
+    if (AIRTABLE_BASE_ID && AIRTABLE_API_KEY) {
+      try {
+        console.log('Attempting Airtable submission...')
+        const airtableResponse = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ID}`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${AIRTABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            fields: {
+              Name: name,
+              Email: email,
+              Phone: phone,
+              Business: business,
+              Industry: industry,
+              "Lead Source": leadSource,
+              Message: message || "",
+              Status: "New Lead",
+              "Created At": new Date().toISOString(),
+            },
+          }),
+        })
 
-    if (!airtableResponse.ok) {
-      const errorText = await airtableResponse.text()
-      console.error('Airtable API error:', {
-        status: airtableResponse.status,
-        statusText: airtableResponse.statusText,
-        body: errorText
-      })
-      throw new Error(`Failed to submit to Airtable: ${airtableResponse.status} ${airtableResponse.statusText}`)
+        if (airtableResponse.ok) {
+          const airtableData = await airtableResponse.json()
+          console.log('Successfully submitted to Airtable:', airtableData.id)
+          return NextResponse.json({
+            success: true,
+            recordId: airtableData.id,
+            method: 'airtable'
+          })
+        } else {
+          console.error('Airtable failed, falling back to console logging')
+        }
+      } catch (airtableError) {
+        console.error('Airtable error, falling back:', airtableError)
+      }
     }
 
-    const airtableData = await airtableResponse.json()
-    console.log('Airtable response:', airtableData)
+    // Fallback: Log to console (Vercel logs)
+    console.log('=== NEW LEAD SUBMISSION ===')
+    console.log('Name:', name)
+    console.log('Email:', email)
+    console.log('Phone:', phone)
+    console.log('Business:', business)
+    console.log('Industry:', industry)
+    console.log('Lead Source:', leadSource)
+    console.log('Message:', message)
+    console.log('Timestamp:', new Date().toISOString())
+    console.log('=== END LEAD ===')
 
+    // You can check these logs in Vercel dashboard under Functions tab
     return NextResponse.json({
       success: true,
-      recordId: airtableData.id,
+      method: 'console',
+      message: 'Form submitted successfully. Check Vercel logs for details.'
     })
+
   } catch (error) {
     console.error("Contact form submission error:", error)
-    return NextResponse.json({ error: "Failed to submit form" }, { status: 500 })
+    return NextResponse.json({ 
+      error: "Failed to submit form", 
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }
-
