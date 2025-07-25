@@ -2,6 +2,16 @@ import { Button } from "@/components/ui/button"
 import { ArrowRight, Phone, MessageSquare } from 'lucide-react'
 
 export function Hero() {
+  const scrollToContact = () => {
+    const contactSection = document.getElementById('contact-form')
+    if (contactSection) {
+      contactSection.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      })
+    }
+  }
+
   return (
     <section className="relative min-h-screen bg-white overflow-hidden">
       {/* Geometric shapes for NeoBrutalist effect */}
@@ -32,6 +42,7 @@ export function Hero() {
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
             <Button
               size="lg"
+              onClick={scrollToContact}
               className="bg-black text-white hover:bg-gray-800 text-xl px-8 py-6 font-black border-4 border-black shadow-[6px_6px_0px_0px_rgba(37,99,235,1)] hover:shadow-[8px_8px_0px_0px_rgba(37,99,235,1)] transition-all transform hover:-translate-y-1"
             >
               GET YOUR AI RECEPTIONIST
@@ -41,6 +52,7 @@ export function Hero() {
             <Button
               variant="outline"
               size="lg"
+              onClick={scrollToContact}
               className="bg-white text-black hover:bg-gray-100 text-xl px-8 py-6 font-black border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all transform hover:-translate-y-1"
             >
               BOOK A DEMO
