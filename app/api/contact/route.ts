@@ -18,6 +18,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
+    // Debug: Log environment variables (without exposing sensitive data)
+    console.log('=== ENVIRONMENT VARIABLE DEBUG ===')
+    console.log('AIRTABLE_BASE_ID exists:', !!AIRTABLE_BASE_ID)
+    console.log('AIRTABLE_BASE_ID value:', AIRTABLE_BASE_ID ? `${AIRTABLE_BASE_ID.substring(0, 8)}...` : 'undefined')
+    console.log('AIRTABLE_API_KEY exists:', !!AIRTABLE_API_KEY)
+    console.log('AIRTABLE_API_KEY value:', AIRTABLE_API_KEY ? `${AIRTABLE_API_KEY.substring(0, 8)}...` : 'undefined')
+    console.log('AIRTABLE_TABLE_ID:', AIRTABLE_TABLE_ID)
+    console.log('=== END DEBUG ===')
+
     // Try Airtable first if configured
     if (AIRTABLE_BASE_ID && AIRTABLE_API_KEY) {
       try {
