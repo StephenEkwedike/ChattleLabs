@@ -44,10 +44,10 @@ export async function POST(request: NextRequest) {
               Phone: phone,
               Business: business,
               Industry: industry,
-              "Lead Source": leadSource,
+              // Source: leadSource,
               Message: message || "",
               Status: "New Lead",
-              "Created At": new Date().toISOString(),
+              // Created: new Date().toISOString(),
             },
           }),
         })
@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
             method: 'airtable'
           })
         } else {
+          console.log({ airtableResponse })
           console.error('Airtable failed, falling back to console logging')
         }
       } catch (airtableError) {
